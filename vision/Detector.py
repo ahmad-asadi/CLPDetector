@@ -7,6 +7,7 @@ from image_processings.ImageProcessor import ImageProcessor
 
 
 class Detector:
+    averaging_region_count = 5
     lp_locate_winw = 200
     lp_locate_winh = 50
     lp_locate_stepw = 20
@@ -14,7 +15,7 @@ class Detector:
     lp_search_cut_ratio = 5
 
     char_split_histh = 300
-    char_split_avg_scale = 0.65
+    char_split_avg_scale = 0.7
 
     @classmethod
     def detect_lp_location(cls, img, src_img, pyr_ratio, verbose=False):
@@ -64,10 +65,10 @@ class Detector:
 
     @classmethod
     def cut_lp_bounding_box(cls, h, lp_reg, lp_search_offset, pyr_ratio, src_img, w, x, y):
-        w += 25
-        h += 10
-        x -= 12
-        y -= 5
+        w += 50
+        h += 20
+        x -= 25
+        y -= 10
         lp_reg = src_img[y * (2 ** pyr_ratio):(y + h) * (2 ** pyr_ratio), (lp_search_offset + x) * (2 ** pyr_ratio):
                                                                           (x + w + lp_search_offset) * (
                                                                                   2 ** pyr_ratio)]
@@ -97,10 +98,14 @@ class Detector:
             return None
         hist_size = len(hist)
         hist_img = np.zeros(shape=(cls.char_split_histh, cols, 3))
-        split_points = []
+        split_points = [0]
+        averaging_regions = []
+        for i in range(cls.averaging_region_count):
+            averaging_regions.append(range(int(i*hist_size/cls.averaging_region_count), int((i+1)*hist_size/cls.averaging_region_count)))
         for i in range(1, hist_size - 1):
             split_point = False
-            if (hist[i] < cls.char_split_avg_scale*np.average(hist)) and hist[i-1] >= hist[i] and hist[i+1] >= hist[i] and \
+            if (hist[i] < cls.char_split_avg_scale*np.average(hist[averaging_regions[int(cls.averaging_region_count*i/hist_size)]])) \
+                    and hist[i-1] >= hist[i] and hist[i+1] >= hist[i] and \
                     (len(split_points) == 0 or i - split_points[-1] > 10):
                 split_points.append(i)
                 split_point = True
@@ -111,13 +116,15 @@ class Detector:
 
             hist_img = cv.line(hist_img, (i - 1, int(cls.char_split_histh * (1-hist[i - 1]))),
                                (i, int(cls.char_split_histh * (1-hist[i]))), (255, 255, 255), 2)
-            hist_img = cv.line(hist_img, (i - 1, int(cls.char_split_histh * (1-cls.char_split_avg_scale*np.average(hist)))),
-                               (i, int(cls.char_split_histh * (1-cls.char_split_avg_scale*np.average(hist)))), (255, 0, 0), 1)
+            hist_img = cv.line(hist_img, (i - 1, int(cls.char_split_histh * (1-cls.char_split_avg_scale*np.average(hist[averaging_regions[int(cls.averaging_region_count*i/hist_size)]])))),
+                               (i, int(cls.char_split_histh * (1-cls.char_split_avg_scale*np.average(hist[averaging_regions[int(cls.averaging_region_count*i/hist_size)]])))), (255, 0, 0), 1)
+
+        split_points.append(hist_size)
 
         if verbose:
             print("number of detected split points:", len(split_points))
 
-        if len(split_points) < 7:
+        if len(split_points) < 9:
             return None
         print(np.max(hist), np.min(hist), np.average(hist))
 
@@ -131,7 +138,7 @@ class Detector:
             else:
                 prev_point = split_points[i - 1]
             new_char = img[:, prev_point:split_points[i]]
-            if 5 <= len(new_char[0]) <= 50:
+            if 5 <= len(new_char[0]) <= 60:
                 splitted_chars.append(new_char)
                 ImageProcessor.show_image(new_char)
 

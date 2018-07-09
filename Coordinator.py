@@ -57,14 +57,33 @@ class Coordinator:
             if img is None:  # No LP detected
                 continue
 
+            img = ImageProcessor.extract_edges(img)
+            img = ImageProcessor.find_corners(img)
+            if img is None:
+                continue
+
+            ImageProcessor.show_image(img, win_name="plate")
+            continue
+            #
+            # img = ImageProcessor.cvt_to_gray(img)
+            # src_img = img
+            # ImageProcessor.show_image(img, "src", wait=1)
+            # img = ImageProcessor.morphological_close(img)
+            # img = ImageProcessor.morphological_open(img, iterations=5)
+            # img = src_img - img
+            # img = ImageProcessor.morphological_gradient(img)
+            # img = ImageProcessor.morphological_close(img)
+            # ImageProcessor.show_image(img, "Opened")
+            #
+
             char_imgs = Detector.split_lp_char_regions(img, self.verbose)
             if char_imgs is None:  # Wrong LP detection
                 continue
 
-            char_ind = 0
-            for char in char_imgs:
-                ImageProcessor.writeFile(char, file_name="char_"+str(char_ind)+"_frame_" + str(i) + ".png")
-                char_ind += 1
+            # char_ind = 0
+            # for char in char_imgs:
+            #     ImageProcessor.writeFile(char, file_name="char_"+str(char_ind)+"_frame_" + str(i) + ".png")
+            #     char_ind += 1
 
 
 Coordinator()
