@@ -45,7 +45,7 @@ class ImageProcessor:
         return mask
 
     @classmethod
-    def writeFile(cls, img, file_name, output_dir="/tmp/clp"):
+    def writeFile(cls, img, file_name, output_dir="./clp"):
         cv.imwrite(join(output_dir, file_name), img)
 
     @classmethod
@@ -63,6 +63,10 @@ class ImageProcessor:
     @classmethod
     def morphological_gradient(cls, img):
         return cv.morphologyEx(img, cv.MORPH_GRADIENT, kernel=np.ones((3, 3), np.uint8))
+
+    @classmethod
+    def morphological_erode(cls, img):
+        return cv.morphologyEx(img, cv.MORPH_ERODE, kernel=np.ones((5,5), np.uint8))
 
     @classmethod
     def extract_edges(cls, img):
@@ -87,3 +91,4 @@ class ImageProcessor:
 
         cv.imwrite('houghlines3.jpg', img)
         return img
+
